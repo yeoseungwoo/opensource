@@ -2,11 +2,18 @@
 
 사용자ID와 레벨 번호로 사용자마다 다른 flag를 만든다.
 flag = FLAG{ HMAC-SHA256(SECRET_KEY, "사용자ID:레벨")[:16] }
+
+사용법:
+  python flag_gen.py make  <사용자ID> <레벨>
+  python flag_gen.py check <사용자ID> <레벨> <flag>
 """
 import hmac
 import hashlib
+import os
+import sys
 
-SECRET_KEY = b"change-this-secret-key"
+# 비밀키는 코드에 쓰지 않고 환경변수에서 읽는다
+SECRET_KEY = os.environ.get("FLAGSTEP_SECRET", "dev-only-secret").encode()
 
 
 def make_flag(user_id: str, level: int) -> str:
@@ -20,6 +27,15 @@ def check_flag(user_id: str, level: int, submitted: str) -> bool:
     return hmac.compare_digest(make_flag(user_id, level), submitted.strip())
 
 
+def main(argv):
+    if len(argv) == 4 and argv[1] == "make":
+        print(make_flag(argv[2], int(argv[3])))
+    elif len(argv) == 5 and argv[1] == "check":
+        ok = check_flag(argv[2], int(argv[3]), argv[4])
+        print("정답! 다음 레벨이 열렸습니다." if ok else "틀렸습니다.")
+    else:
+        print(__doc__)
+
+
 if __name__ == "__main__":
-    f = make_flag("20261707", 0)
-    print(f, check_flag("20261707", 0, f), check_flag("20261708", 0, f))
+    main(sys.argv)
